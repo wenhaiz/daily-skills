@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Docs Manager"
+  short_description: "Initialize, maintain, and upgrade project documentation"
+  default_prompt: "Use $project-docs-manager to inspect and maintain the current project documentation system."
