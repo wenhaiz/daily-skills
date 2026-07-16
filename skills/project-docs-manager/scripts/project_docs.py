@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 
-CURRENT_CONTRACT_VERSION = 1
+CURRENT_CONTRACT_VERSION = 2
 MANIFEST_PATH = Path("Docs/.project-docs.json")
 
 SCAFFOLD = {
@@ -14,6 +14,7 @@ SCAFFOLD = {
     "product-fact-root.md": Path("Docs/0-ProductFact/README.md"),
     "domain-fact-template.md": Path("Docs/0-ProductFact/90-templates/domain-fact-template.md"),
     "plans-root.md": Path("Docs/1-Plans/README.md"),
+    "plans-archive-root.md": Path("Docs/1-Plans/archived/README.md"),
     "ideas-root.md": Path("Docs/2-Ideas/README.md"),
     "changelog-root.md": Path("Docs/3-Changelog/README.md"),
     "product-fact-check.sh": Path("scripts/product_fact/check.sh"),
@@ -43,10 +44,14 @@ def read_manifest(root: Path):
 
 def inspect(root: Path) -> int:
     manifest = read_manifest(root)
+    manifest_paths = manifest.get("paths", {}) if manifest else {}
+    plans_path = Path(manifest_paths.get("plans", "Docs/1-Plans"))
+    plans_archive_path = Path(manifest_paths.get("plans_archive", plans_path / "archived"))
     known_paths = {
         "docs": root / "Docs",
         "product_fact": root / "Docs/0-ProductFact",
-        "plans": root / "Docs/1-Plans",
+        "plans": root / plans_path,
+        "plans_archive": root / plans_archive_path,
         "ideas": root / "Docs/2-Ideas",
         "changelog": root / "Docs/3-Changelog",
         "fact_check": root / "scripts/product_fact/check.sh",
@@ -83,6 +88,7 @@ def baseline_manifest(project_name: str):
             "entrypoint": "Docs/README.md",
             "product_fact": "Docs/0-ProductFact",
             "plans": "Docs/1-Plans",
+            "plans_archive": "Docs/1-Plans/archived",
             "ideas": "Docs/2-Ideas",
             "changelog": "Docs/3-Changelog",
         },

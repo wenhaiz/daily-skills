@@ -23,6 +23,25 @@ Validation:
 - Run the project's freshness check.
 - Search repository instructions for obsolete documentation paths.
 
+## Version 2
+
+Migration id: `v2-archive-completed-plans`
+
+Required contract:
+
+- The configured Plan directory has an `archived/` subdirectory.
+- Plans explicitly marked `completed` live in `archived/`; unfinished and ambiguous Plans remain in the main Plan directory.
+- Repository instructions and Plan navigation explain the completion and archive rule.
+- The manifest records the archive path separately from the active Plan path.
+- References to moved Plans use their archived paths.
+
+Validation:
+
+- Inspect Plan status from document content; do not classify completion from filenames.
+- Confirm every moved Plan is explicitly `completed` and ProductFact handoff is recorded.
+- Search the entire repository for references to each moved Plan's previous path.
+- Confirm `paths.plans_archive` resolves to the configured Plan directory's `archived/` subdirectory.
+
 ## Adding future migrations
 
 When updating this skill:

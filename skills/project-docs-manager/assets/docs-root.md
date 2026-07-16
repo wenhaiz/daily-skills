@@ -16,3 +16,4 @@
 3. 完成后根据最终代码更新 ProductFact 和证据。
 4. 有意义的交付写入 Changelog。
 5. ProductFact 完成核验后，Plan 才能标记为 completed。
+6. 将 completed Plan 移到 `1-Plans/archived/`，并更新仓库内引用。

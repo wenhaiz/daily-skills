@@ -24,7 +24,7 @@ Read [references/migrations.md](references/migrations.md) whenever a project has
 1. **Audit**: inspect the current documentation structure, rules, scripts, and manifest. Do not write files.
 2. **Initialize**: establish the minimum documentation lifecycle in a project that does not have it.
 3. **Maintain**: route new or changed knowledge to the correct document and keep links consistent.
-4. **Close a delivery**: update stable facts and evidence, add the concise changelog record, then complete the Plan.
+4. **Close a delivery**: update stable facts and evidence, add the concise changelog record, complete the Plan, then move it to the Plan archive.
 5. **Upgrade**: compare the project's recorded contract version with this skill's migration contract and apply only the missing migrations.
 
 ## Audit first
@@ -73,6 +73,7 @@ Route documentation by intent:
 
 - Future possibility without active development -> `Docs/2-Ideas/`
 - Scoped development and its changing progress -> `Docs/1-Plans/`
+- Completed development history -> `Docs/1-Plans/archived/`
 - Stable intent, decisions, and current code-backed behavior -> `Docs/0-ProductFact/`
 - Concise user-visible or behaviorally meaningful delivery record -> `Docs/3-Changelog/<year>/`
 
@@ -84,6 +85,9 @@ When work starts, create or continue one Plan. When work finishes:
 4. Add a short Changelog entry when the change is meaningful.
 5. Remove the source Idea after implementation and fact handoff are complete.
 6. Mark the Plan completed only after ProductFact is current.
+7. Move the completed Plan to `<plans>/archived/`, preserve its filename, and update repository links that referenced its previous path.
+
+Only archive Plans whose status is explicitly `completed`. Keep `draft`, `active`, `blocked`, and `superseded` Plans in the main Plan directory unless the repository defines another rule. If status is absent or ambiguous, do not infer completion from the filename or implementation state.
 
 ## Upgrade projects after this skill changes
 
@@ -107,4 +111,5 @@ Use validation proportional to the change:
 - Run `scripts/product_fact/check.sh` when ProductFact domains or watched code changed.
 - Confirm no project-owned document was unintentionally replaced.
 - For a taxonomy migration, search the entire repository for old paths.
+- After archiving a Plan, search the entire repository for references to its previous path.
 - Keep the Plan active if stable facts, verification, or migration steps remain incomplete.

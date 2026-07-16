@@ -6,7 +6,7 @@
 
 | Skill | Version | Description |
 | --- | --- | --- |
-| `project-docs-manager` | `1.0.0` | 初始化、维护和增量升级项目文档体系 |
+| `project-docs-manager` | `1.1.0` | 初始化、维护和增量升级项目文档体系 |
 
 版本真相以 `skills.json` 为准。
 
@@ -42,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/wenhaiz/daily-skills/main/scripts/i
   | bash -s -- project-docs-manager --platform claude
 ```
 
-脚本默认根据 `skills.json` 安装对应的发布 tag。使用 `--version 1.0.0` 可以固定版本；目标已存在时，显式增加 `--replace`，旧版本会先移动到安装目录下的 `.daily-skills-backups/`。
+脚本默认根据 `skills.json` 安装对应的发布 tag。使用 `--version 1.1.0` 可以固定版本；目标已存在时，显式增加 `--replace`，旧版本会先移动到安装目录下的 `.daily-skills-backups/`。
 
 ## 校验
 
@@ -60,7 +60,7 @@ python3 scripts/validate.py
 python3 scripts/release.py project-docs-manager
 ```
 
-它会创建 `project-docs-manager-v1.0.0` 形式的 annotated tag。增加 `--push` 才会推送 tag；远端收到 tag 后，GitHub Actions 会创建对应 Release。
+它会创建 `project-docs-manager-v1.1.0` 形式的 annotated tag。增加 `--push` 才会推送 tag；远端收到 tag 后，GitHub Actions 会创建对应 Release。
 
 ## 从 GitHub 安装固定版本
 
@@ -68,5 +68,5 @@ python3 scripts/release.py project-docs-manager
 install-skill-from-github.py \
   --repo <owner>/daily-skills \
   --path skills/project-docs-manager \
-  --ref project-docs-manager-v1.0.0
+  --ref project-docs-manager-v1.1.0
 ```

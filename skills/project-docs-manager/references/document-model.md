@@ -21,6 +21,8 @@ Store one feature's complete development history: scope, exclusions, phases, pro
 
 Recommended statuses: `draft`, `active`, `blocked`, `completed`, `superseded`.
 
+Keep unfinished Plans in the configured Plan directory. After a Plan is explicitly marked `completed`, move it to the `archived/` subdirectory under that Plan directory and update references to its old path. Preserve the filename so history stays easy to trace. Do not infer completion when status is missing or ambiguous.
+
 ### ProductFact
 
 Store stable, reusable knowledge:
