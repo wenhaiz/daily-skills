@@ -143,6 +143,11 @@ def main() -> int:
         for name, config in sorted(catalog["skills"].items()):
             validate_skill(name, config)
 
+        for path in (ROOT / "scripts").glob("*.py"):
+            validate_python(path)
+        for path in (ROOT / "scripts").glob("*.sh"):
+            validate_shell(path)
+
         if args.tag:
             expected_tags = {
                 f"{name}-v{config['version']}"

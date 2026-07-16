@@ -26,6 +26,24 @@ python3 scripts/install.py project-docs-manager --mode symlink
 python3 scripts/install.py project-docs-manager --mode copy
 ```
 
+## 远程安装
+
+不克隆仓库，直接安装最新发布版本到 Codex：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wenhaiz/daily-skills/main/scripts/install-remote.sh \
+  | bash -s -- project-docs-manager
+```
+
+安装到 Claude Code：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wenhaiz/daily-skills/main/scripts/install-remote.sh \
+  | bash -s -- project-docs-manager --platform claude
+```
+
+脚本默认根据 `skills.json` 安装对应的发布 tag。使用 `--version 1.0.0` 可以固定版本；目标已存在时，显式增加 `--replace`，旧版本会先移动到安装目录下的 `.daily-skills-backups/`。
+
 ## 校验
 
 ```bash
