@@ -17,7 +17,7 @@ SCAFFOLD = {
     "plans-archive-root.md": Path("Docs/1-Plans/archived/README.md"),
     "ideas-root.md": Path("Docs/2-Ideas/README.md"),
     "changelog-root.md": Path("Docs/3-Changelog/README.md"),
-    "product-fact-check.sh": Path("scripts/product_fact/check.sh"),
+    "product-fact-check.sh": Path("Docs/0-ProductFact/check.sh"),
 }
 
 
@@ -45,16 +45,23 @@ def read_manifest(root: Path):
 def inspect(root: Path) -> int:
     manifest = read_manifest(root)
     manifest_paths = manifest.get("paths", {}) if manifest else {}
+    product_fact_path = Path(manifest_paths.get("product_fact", "Docs/0-ProductFact"))
+    if not (root / product_fact_path).exists() and (root / "docs/product-fact").exists():
+        product_fact_path = Path("docs/product-fact")
     plans_path = Path(manifest_paths.get("plans", "Docs/1-Plans"))
     plans_archive_path = Path(manifest_paths.get("plans_archive", plans_path / "archived"))
+    fact_check_path = root / product_fact_path / "check.sh"
+    legacy_fact_check_path = root / "scripts/product_fact/check.sh"
+    if not fact_check_path.exists() and legacy_fact_check_path.exists():
+        fact_check_path = legacy_fact_check_path
     known_paths = {
         "docs": root / "Docs",
-        "product_fact": root / "Docs/0-ProductFact",
+        "product_fact": root / product_fact_path,
         "plans": root / plans_path,
         "plans_archive": root / plans_archive_path,
         "ideas": root / "Docs/2-Ideas",
         "changelog": root / "Docs/3-Changelog",
-        "fact_check": root / "scripts/product_fact/check.sh",
+        "fact_check": fact_check_path,
     }
     result = {
         "root": str(root),

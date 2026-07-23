@@ -108,7 +108,7 @@ If no manifest exists but the repository already resembles this system, reconstr
 Use validation proportional to the change:
 
 - Always inspect changed links and paths.
-- Run `scripts/product_fact/check.sh` when ProductFact domains or watched code changed.
+- Run the repository's ProductFact check script at its configured path when ProductFact domains or watched code changed. Prefer `<product-fact>/check.sh`; continue supporting `scripts/product_fact/check.sh` in projects that still use the legacy location.
 - Confirm no project-owned document was unintentionally replaced.
 - For a taxonomy migration, search the entire repository for old paths.
 - After archiving a Plan, search the entire repository for references to its previous path.
