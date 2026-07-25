@@ -1,0 +1,4 @@
+interface:
+  display_name: "iOS SwiftUI UI Quality"
+  short_description: "Verify polished, accessible SwiftUI screens and components"
+  default_prompt: "Use $ios-swiftui-ui-quality to implement and verify this SwiftUI change."

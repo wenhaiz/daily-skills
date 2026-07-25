@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI Quality Workflow"
+  short_description: "Plan, verify, and review high-quality UI changes"
+  default_prompt: "Use $ui-quality-workflow to plan and verify this UI change."

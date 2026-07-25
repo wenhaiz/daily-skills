@@ -1,10 +1,30 @@
 {
   "schema_version": 1,
   "skills": {
+    "ios-swiftui-ui-quality": {
+      "version": "1.0.0",
+      "path": "skills/ios-swiftui-ui-quality",
+      "description": "Build and verify accessible, polished SwiftUI interfaces"
+    },
+    "product-team-facilitation": {
+      "version": "1.0.0",
+      "path": "skills/product-team-facilitation",
+      "description": "Facilitate concise cross-functional product decisions"
+    },
     "project-docs-manager": {
       "version": "1.1.0",
       "path": "skills/project-docs-manager",
       "description": "Initialize, maintain, and incrementally upgrade project documentation systems"
+    },
+    "release-readiness-review": {
+      "version": "1.0.0",
+      "path": "skills/release-readiness-review",
+      "description": "Run a risk-focused go/no-go pre-release review"
+    },
+    "ui-quality-workflow": {
+      "version": "1.0.0",
+      "path": "skills/ui-quality-workflow",
+      "description": "Plan and independently verify non-trivial UI changes"
     }
   }
 }

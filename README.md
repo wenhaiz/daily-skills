@@ -6,6 +6,10 @@
 
 | Skill | Version | Description |
 | --- | --- | --- |
+| `ios-swiftui-ui-quality` | `1.0.0` | SwiftUI 专属 UI 工作流；适用于页面、导航、动效、Preview 和 UI Test 的实现与视觉验收。 |
+| `ui-quality-workflow` | `1.0.0` | 为非轻微 UI 改动建立设计契约、可访问性检查与真实画面验收；适用于新页面、重要布局或共享组件改动。 |
+| `release-readiness-review` | `1.0.0` | 在生产、TestFlight、beta 或正式发布前执行风险导向的 go/no-go 审查。 |
+| `product-team-facilitation` | `1.0.0` | 组织产品、技术、数据、增长和运营视角，收敛功能优先级、路线图与增长决策。 |
 | `project-docs-manager` | `1.1.0` | 初始化、维护和增量升级项目文档体系 |
 
 版本真相以 `skills.json` 为准。

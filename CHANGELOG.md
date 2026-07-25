@@ -1,5 +1,21 @@
 # Changelog
 
+## ios-swiftui-ui-quality 1.0.0 - 2026-07-25
+
+- 新增 SwiftUI 专属 UI 质量工作流，覆盖 Preview、Dynamic Type、VoiceOver、Reduce Motion、模拟器/真机画面检查与稳定 UI Test。
+
+## ui-quality-workflow 1.0.0 - 2026-07-25
+
+- 新增通用 UI 质量工作流，覆盖设计契约、状态和无障碍检查、真实画面证据与残余风险记录。
+
+## release-readiness-review 1.0.0 - 2026-07-25
+
+- 新增跨平台发版门禁，提供风险清单、结构化报告和 GO/NO-GO/waiver 决策规则。
+
+## product-team-facilitation 1.0.0 - 2026-07-25
+
+- 新增跨职能产品决策主持流程，按需引入产品、技术、数据、增长和运营角色。
+
 ## project-docs-manager 1.1.0 - 2026-07-16
 
 - 新增 Plan 归档契约：明确完成的 Plan 移到 `<plans>/archived/`。

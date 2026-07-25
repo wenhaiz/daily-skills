@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release Readiness Review"
+  short_description: "Run a risk-focused go/no-go release review"
+  default_prompt: "Use $release-readiness-review to assess this release for go/no-go."

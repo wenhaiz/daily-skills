@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Team Facilitation"
+  short_description: "Lead product, tech, data, growth, and ops decisions"
+  default_prompt: "Use $product-team-facilitation to facilitate a decision on this product idea."
