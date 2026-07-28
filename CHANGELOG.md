@@ -1,5 +1,9 @@
 # Changelog
 
+## refine-code 1.0.0 - 2026-07-28
+
+- 新增基于证据的代码改进工作流，覆盖可靠性、可扩展性、可维护性以及行为契约保护。
+
 ## ios-swiftui-ui-quality 1.0.0 - 2026-07-25
 
 - 新增 SwiftUI 专属 UI 质量工作流，覆盖 Preview、Dynamic Type、VoiceOver、Reduce Motion、模拟器/真机画面检查与稳定 UI Test。

@@ -16,6 +16,11 @@
       "path": "skills/project-docs-manager",
       "description": "Initialize, maintain, and incrementally upgrade project documentation systems"
     },
+    "refine-code": {
+      "version": "1.0.0",
+      "path": "skills/refine-code",
+      "description": "Refine code for reliability, scalability, and maintainability"
+    },
     "release-readiness-review": {
       "version": "1.0.0",
       "path": "skills/release-readiness-review",

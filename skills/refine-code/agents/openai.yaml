@@ -1,0 +1,4 @@
+interface:
+  display_name: "Refine Code"
+  short_description: "Refine code for reliability, scale, and change"
+  default_prompt: "Use $refine-code to review and improve this code without changing intended behavior."
