@@ -17,7 +17,11 @@ Store work that may be valuable but has not entered development. Keep the proble
 
 ### Plans
 
-Store one feature's complete development history: scope, exclusions, phases, progress, decisions, verification, blockers, and final handoff. Continue updating the same Plan during implementation.
+Store one feature's complete development history: purpose, context, scope, exclusions, phases, progress, discoveries, decisions, verification, blockers, outcomes, and final handoff. Continue updating the same Plan during implementation.
+
+A Plan is a self-contained living document. A contributor without prior conversation or repository knowledge must be able to use the current working tree and the Plan to continue the work and verify the intended result. Keep timestamped progress, discoveries, decisions, and outcomes current whenever implementation advances or changes course.
+
+Use a standard Plan for bounded work. Use a full ExecPlan for complex features, significant refactors, cross-module changes, migrations, multi-hour work, meaningful unknowns, prototypes, or staged validation. Both levels are outcome-focused; the full level adds novice-oriented repository navigation, independently verifiable milestones, exact commands and expected observations, interfaces and dependencies, recovery guidance, and concise evidence.
 
 Recommended statuses: `draft`, `active`, `blocked`, `completed`, `superseded`.
 

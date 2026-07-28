@@ -42,6 +42,30 @@ Validation:
 - Search the entire repository for references to each moved Plan's previous path.
 - Confirm `paths.plans_archive` resolves to the configured Plan directory's `archived/` subdirectory.
 
+## Version 3
+
+Migration id: `v3-executable-living-plans`
+
+Required contract:
+
+- Every Plan is treated as a self-contained, living, outcome-focused document that a contributor without prior conversation can use to continue work.
+- The repository distinguishes standard Plans from full ExecPlans. Full ExecPlans are required for complex features, significant refactors, cross-module changes, migrations, multi-hour work, meaningful unknowns, prototypes, or staged validation.
+- The configured Plan directory has a discoverable Plan contract that defines authoring, implementation, validation, completion, and archive behavior.
+- A project-owned Plan template exists and contains the standard living sections plus the additional full ExecPlan sections.
+- Repository instructions or the configured Plan navigation explain when to use a full ExecPlan and link to the Plan contract.
+- `Docs/.project-docs.json` records `paths.plan_contract` and `paths.plan_template`.
+- Active Plans are upgraded when work resumes and the missing sections are material to safe continuation. Archived Plans are preserved and are not rewritten in bulk.
+
+Validation:
+
+- Confirm the configured Plan contract and Plan template paths exist.
+- Confirm the Plan contract requires timestamped progress, discoveries with evidence, decision rationale, observable validation, outcomes, and ProductFact handoff.
+- Confirm the full ExecPlan rules include repository orientation, independently verifiable milestones, exact commands and expected observations, interfaces and dependencies, idempotence and recovery, and concise evidence.
+- Confirm Plan generation searches active and archived Plans before creating a new document and follows repository naming rules, with `yyyy-MM-dd-<kebab-title>.md` as the fallback.
+- Confirm implementation guidance keeps all Plan sections current at stopping points without overriding user authorization, repository rules, approvals, or commit policy.
+- Confirm existing archived Plans were not modified merely to satisfy the new template.
+- Confirm `paths.plan_contract` and `paths.plan_template` resolve from the manifest rather than fixed default directories.
+
 ## Adding future migrations
 
 When updating this skill:

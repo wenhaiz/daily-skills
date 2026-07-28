@@ -6,14 +6,16 @@ import sys
 from pathlib import Path
 
 
-CURRENT_CONTRACT_VERSION = 2
+CURRENT_CONTRACT_VERSION = 3
 MANIFEST_PATH = Path("Docs/.project-docs.json")
 
 SCAFFOLD = {
     "docs-root.md": Path("Docs/README.md"),
     "product-fact-root.md": Path("Docs/0-ProductFact/README.md"),
     "domain-fact-template.md": Path("Docs/0-ProductFact/90-templates/domain-fact-template.md"),
+    "plan-template.md": Path("Docs/0-ProductFact/90-templates/plan-template.md"),
     "plans-root.md": Path("Docs/1-Plans/README.md"),
+    "plans-contract.md": Path("Docs/1-Plans/PLANS.md"),
     "plans-archive-root.md": Path("Docs/1-Plans/archived/README.md"),
     "ideas-root.md": Path("Docs/2-Ideas/README.md"),
     "changelog-root.md": Path("Docs/3-Changelog/README.md"),
@@ -50,6 +52,13 @@ def inspect(root: Path) -> int:
         product_fact_path = Path("docs/product-fact")
     plans_path = Path(manifest_paths.get("plans", "Docs/1-Plans"))
     plans_archive_path = Path(manifest_paths.get("plans_archive", plans_path / "archived"))
+    plan_contract_path = Path(manifest_paths.get("plan_contract", plans_path / "PLANS.md"))
+    plan_template_path = Path(
+        manifest_paths.get(
+            "plan_template",
+            product_fact_path / "90-templates/plan-template.md",
+        )
+    )
     fact_check_path = root / product_fact_path / "check.sh"
     legacy_fact_check_path = root / "scripts/product_fact/check.sh"
     if not fact_check_path.exists() and legacy_fact_check_path.exists():
@@ -59,6 +68,8 @@ def inspect(root: Path) -> int:
         "product_fact": root / product_fact_path,
         "plans": root / plans_path,
         "plans_archive": root / plans_archive_path,
+        "plan_contract": root / plan_contract_path,
+        "plan_template": root / plan_template_path,
         "ideas": root / "Docs/2-Ideas",
         "changelog": root / "Docs/3-Changelog",
         "fact_check": fact_check_path,
@@ -96,6 +107,8 @@ def baseline_manifest(project_name: str):
             "product_fact": "Docs/0-ProductFact",
             "plans": "Docs/1-Plans",
             "plans_archive": "Docs/1-Plans/archived",
+            "plan_contract": "Docs/1-Plans/PLANS.md",
+            "plan_template": "Docs/0-ProductFact/90-templates/plan-template.md",
             "ideas": "Docs/2-Ideas",
             "changelog": "Docs/3-Changelog",
         },
