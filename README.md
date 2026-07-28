@@ -6,6 +6,7 @@
 
 | Skill | Version | Description |
 | --- | --- | --- |
+| `image-compress` | `1.0.0` | 批量压缩 PNG 图片，默认无损，可选轻度有损，并跳过未修改的历史文件。 |
 | `ios-swiftui-ui-quality` | `1.0.0` | SwiftUI 专属 UI 工作流；适用于页面、导航、动效、Preview 和 UI Test 的实现与视觉验收。 |
 | `ui-quality-workflow` | `1.0.0` | 为非轻微 UI 改动建立设计契约、可访问性检查与真实画面验收；适用于新页面、重要布局或共享组件改动。 |
 | `refine-code` | `1.0.0` | 基于证据改进代码的可靠性、可扩展性和可维护性，同时保护预期行为与公开契约。 |

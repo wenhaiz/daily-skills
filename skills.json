@@ -1,6 +1,11 @@
 {
   "schema_version": 1,
   "skills": {
+    "image-compress": {
+      "version": "1.0.0",
+      "path": "skills/image-compress",
+      "description": "Compress PNG images with lossless-first and cached repeat runs"
+    },
     "ios-swiftui-ui-quality": {
       "version": "1.0.0",
       "path": "skills/ios-swiftui-ui-quality",

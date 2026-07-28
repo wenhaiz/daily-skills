@@ -1,0 +1,4 @@
+interface:
+  display_name: "图片压缩"
+  short_description: "批量压缩 PNG 图片，默认无损，必要时再轻度有损"
+  default_prompt: "Use $image-compress to compress PNG files with lossless-first behavior and optional light lossy fallback."

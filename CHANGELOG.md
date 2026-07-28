@@ -1,5 +1,10 @@
 # Changelog
 
+## image-compress 1.0.0 - 2026-07-28
+
+- 迁入 PNG 图片压缩 skill，默认使用 `oxipng -o 4` 进行无损优化。
+- 支持用户明确允许后的 `pngquant` 轻度有损 fallback，并通过缓存跳过未修改的历史图片。
+
 ## project-docs-manager 1.2.0 - 2026-07-28
 
 - 将 Plan 定义为自包含、持续更新、以可观察结果为目标的活文档，并区分普通 Plan 与完整 ExecPlan。
