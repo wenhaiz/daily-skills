@@ -1,4 +1,4 @@
 interface:
   display_name: "Project Docs Manager"
-  short_description: "Maintain project docs and executable living Plans"
-  default_prompt: "Use $project-docs-manager to inspect and maintain project documentation and executable Plans."
+  short_description: "Manage documentation lifecycles and executable Plans"
+  default_prompt: "Use $project-docs-manager to audit or upgrade a documentation system, or to execute and close work through its living Plan contract."
