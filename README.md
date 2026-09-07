@@ -13,6 +13,7 @@
 | `release-readiness-review` | `1.0.0` | 在生产、TestFlight、beta 或正式发布前执行风险导向的 go/no-go 审查。 |
 | `product-team-facilitation` | `1.0.0` | 组织产品、技术、数据、增长和运营视角，收敛功能优先级、路线图与增长决策。 |
 | `project-docs-manager` | `1.2.0` | 初始化、维护和增量升级项目文档体系，并管理可执行的活 Plan |
+| `simplicity-review` | `1.0.0` | 评审需求文档、PRD 或功能方案，主动挑战过度设计并提出有依据的反对意见，推动结构简洁、能快速上线验证。 |
 
 版本真相以 `skills.json` 为准。
 

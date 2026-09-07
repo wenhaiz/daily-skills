@@ -35,6 +35,11 @@
       "version": "1.0.0",
       "path": "skills/ui-quality-workflow",
       "description": "Plan and independently verify non-trivial UI changes"
+    },
+    "simplicity-review": {
+      "version": "1.0.0",
+      "path": "skills/simplicity-review",
+      "description": "评审需求方案时主动挑战过度设计，推动简洁可执行"
     }
   }
 }
