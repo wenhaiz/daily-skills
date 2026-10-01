@@ -1,0 +1,4 @@
+interface:
+  display_name: "社交图片工作台"
+  short_description: "将内容整理为统一风格的社交图文，在本地网页逐页编辑并导出竖版图片"
+  default_prompt: "使用 $social-image-studio 将我的内容整理成小红书图文，打开本地网页预览并导出图片。"

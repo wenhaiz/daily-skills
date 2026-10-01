@@ -13,6 +13,7 @@
 | `release-readiness-review` | `1.0.0` | 在生产、TestFlight、beta 或正式发布前执行风险导向的 go/no-go 审查。 |
 | `product-team-facilitation` | `1.0.0` | 组织产品、技术、数据、增长和运营视角，收敛功能优先级、路线图与增长决策。 |
 | `project-docs-manager` | `1.2.0` | 初始化、维护和增量升级项目文档体系，并管理可执行的活 Plan |
+| `social-image-studio` | `1.0.0` | 本地社交图文编辑器，支持封面、正文图文、两套尺寸样式与 PNG / ZIP 导出。 |
 
 版本真相以 `skills.json` 为准。
 
@@ -75,4 +76,18 @@ install-skill-from-github.py \
   --repo <owner>/daily-skills \
   --path skills/project-docs-manager \
   --ref project-docs-manager-v1.2.0
+```
+
+## 社交图片 demo
+
+```bash
+python3 skills/social-image-studio/scripts/serve.py
+```
+
+打开 `http://127.0.0.1:8765`，逐页输入标题和正文，点击「导出本页 PNG」或「导出全部 ZIP」。点击「保存内容」备份 JSON，之后可导入继续编辑。默认内容为练琴示例；编辑器无需安装 npm 依赖，使用 Python 3 启动即可。
+
+根据已有 JSON 启动：
+
+```bash
+python3 skills/social-image-studio/scripts/serve.py --content /absolute/path/social-pages.json
 ```

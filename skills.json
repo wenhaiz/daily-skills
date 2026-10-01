@@ -35,6 +35,11 @@
       "version": "1.0.0",
       "path": "skills/ui-quality-workflow",
       "description": "Plan and independently verify non-trivial UI changes"
+    },
+    "social-image-studio": {
+      "version": "1.0.0",
+      "path": "skills/social-image-studio",
+      "description": "Create consistent social media image cards with a local editor and PNG export"
     }
   }
 }
