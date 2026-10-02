@@ -5,10 +5,12 @@
 <title>纸页 · 社交图片工作台</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><div><span class="brand">纸页</span><span class="muted">社交图片工作台</span></div><div class="actions"><button id="open-style" popovertarget="style-menu" aria-haspopup="dialog">样式设置</button><button id="import">导入内容</button><button id="save">保存内容</button><button id="export-all" class="primary">导出全部 ZIP</button></div></header>
+<header><div><span class="brand">纸页</span><span class="muted">社交图片工作台</span></div><div class="actions"><button id="open-source" popovertarget="source-menu" aria-haspopup="dialog">内容来源</button><button id="open-style" popovertarget="style-menu" aria-haspopup="dialog">样式设置</button><button id="import">导入内容</button><button id="save">保存内容</button><button id="export-all" class="primary">导出全部 ZIP</button></div></header>
 <main>
-<aside><div class="section-heading"><h2>页面</h2><button id="add">＋ 添加</button></div><p class="hint">拖动页面可调整顺序</p><nav id="pages" aria-label="页面列表"></nav><p id="canvas-size" class="hint">3:4 竖版 · 1242 × 1656 px</p><p id="storage-status" class="hint" role="status"></p></aside>
-<section class="editor"><div class="section-heading"><h2>编辑内容</h2><button id="delete" class="quiet">删除本页</button></div>
+<aside><div class="section-heading"><h2>页面</h2><button id="add">＋ 添加</button></div><p id="page-order-hint" class="hint">拖动页面可调整顺序</p><nav id="pages" aria-label="页面列表"></nav><p id="canvas-size" class="hint">3:4 竖版 · 1242 × 1656 px</p><p id="storage-status" class="hint" role="status"></p></aside>
+<section class="editor"><div class="section-heading"><h2 id="editor-heading">编辑内容</h2><button id="delete" class="quiet">删除本页</button></div>
+<section id="source-panel" hidden><p class="source-name" id="source-filename"></p><p class="hint">在编辑器中修改 Markdown 并保存，图片会自动更新。页面顺序也由文件决定。</p><p id="source-status" role="status"></p><p id="source-error" role="alert"></p><section id="source-highlight-controls" hidden><h2>标题高亮</h2><p class="hint">仅调整下划线范围，不改写 Markdown。留空自动，重置使用文件中的设置。</p><label>下划线文字<input id="source-highlight" maxlength="10000" placeholder="输入标题中的几个字，留空自动"></label><button id="reset-source-highlight">重置高亮范围</button></section><p id="source-highlight-status" class="hint" role="status"></p><section id="source-image-controls" hidden><h2>图片宽度</h2><p class="hint">宽度随当前尺寸的样式保存，不改写 Markdown；重置恢复文件中的宽度。</p><div id="source-image-list"></div></section></section>
+<div id="content-fields">
 <label>页面类型<select id="type"><option value="cover">封面</option><option value="article">正文</option></select></label>
 <label><span id="title-label">封面标题</span><textarea id="title" rows="3" placeholder="输入标题，支持换行"></textarea></label>
 <label id="subtitle-label"><span id="subtitle-label-text">副标题</span><textarea id="subtitle" rows="3" placeholder="输入副标题，支持换行"></textarea></label>
@@ -17,10 +19,20 @@
 <section id="image-editor"><button id="add-image">＋ 插入图片</button><p class="hint">在正文光标处插入图片；移动独立一行的 [图片1] 标记可调整位置。支持 PNG、JPEG、WebP。</p><div id="image-list"></div></section>
 <div id="page-extras"><label id="note-label">底部说明 / 参考资料<textarea id="note" rows="3" placeholder="可填写署名、参考资料等，支持多行；留空不显示"></textarea></label></div>
 
+</div>
 <p id="feedback" role="status"></p><div id="downloads"></div>
 </section>
-<section class="preview"><div class="preview-heading"><div><span class="eyebrow">实时预览</span><h1 id="preview-title">封面</h1></div><button id="export" class="primary">导出本页 PNG</button></div><div class="paper"><canvas id="canvas" width="1242" height="1656" role="img" aria-label="当前页面图片预览"></canvas></div><p id="overflow" role="alert"></p><p class="hint">输入即更新 · 内容保存在当前浏览器 · 导出不含编辑界面</p></section>
+<section class="preview"><div class="preview-heading"><div><span class="eyebrow">实时预览</span><h1 id="preview-title">封面</h1></div><button id="export" class="primary">导出本页 PNG</button></div><div class="paper"><canvas id="canvas" width="1242" height="1656" role="img" aria-label="当前页面图片预览"></canvas></div><p id="overflow" role="alert"></p><p id="preview-hint" class="hint">输入即更新 · 内容保存在当前浏览器 · 导出不含编辑界面</p></section>
 </main>
+<div id="source-menu" popover="auto" role="dialog" aria-labelledby="source-menu-title">
+<h2 id="source-menu-title">内容来源</h2>
+<p class="hint">网页草稿与 Markdown 样式分别保存，切换不会覆盖。</p>
+<label>编辑模式<select id="source-choice"><option value="web">网页编辑</option><option value="markdown">Markdown 文件</option></select></label>
+<label id="source-path-label">Markdown 完整路径<input id="source-path" placeholder="/Users/你的用户名/文章.md" autocomplete="off"></label>
+<p id="source-choice-hint" class="hint">在编辑器中保存文件，预览自动更新。</p>
+<p id="source-choice-error" role="alert"></p>
+<button id="apply-source" class="primary">切换来源</button>
+</div>
 <div id="style-menu" popover="auto" role="dialog" aria-labelledby="style-menu-title" aria-describedby="style-description">
 <div class="section-heading"><h2 id="style-menu-title">全局样式设置</h2><button id="close-style" aria-label="关闭样式设置" popovertarget="style-menu" popovertargetaction="hide">关闭</button></div>
 <p id="style-description" class="hint">每种画布尺寸单独保存样式，切换时自动恢复。调整后立即应用到所有页面。</p>

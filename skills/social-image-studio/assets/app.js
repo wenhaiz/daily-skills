@@ -38,6 +38,24 @@ const defaultDocument = {
     { type: 'article', title: '曲目', subtitle: '', note: '', body: '让练习围绕一首你真正想弹的歌展开。\n\n先把整首歌拆成几个小段，找出最影响连贯演奏的地方。每次只处理一个具体问题，再回到音乐里验证。\n\n练得慢一点，也可以听见节奏、力度和句子的方向。能稳定地弹完，比偶尔弹对一次更有意义。' }
   ]
 };
+const SOURCE_CHOICE_KEY = 'social-image-studio-source';
+let sourceChoice = null;
+try { sourceChoice = JSON.parse(localStorage.getItem(SOURCE_CHOICE_KEY) || 'null'); } catch {}
+let sourcePath = typeof sourceChoice?.path === 'string' ? sourceChoice.path : '';
+let sourceTimer;
+let sourceGeneration = 0;
+let switchingSource = false;
+function sourceUrl(revision) {
+  const query = new URLSearchParams();
+  if (sourcePath) query.set('path', sourcePath);
+  if (revision !== undefined) query.set('revision', revision);
+  return 'source.json?' + query;
+}
+let sourceMode = false;
+let sourceRevision = '';
+let sourcePages = [];
+let sourceHighlights = Object.create(null);
+let sourceImageWidths = { '3:4': {}, '9:16': {} };
 let current = 0;
 let exporting = false;
 const fields = ['type', 'title', 'subtitle', 'body', 'note', 'highlight'];
@@ -86,7 +104,12 @@ function validateDocument(value, includeProfiles = true) {
       if (!Number.isInteger(width) || width < 20 || width > 100) throw new Error('图片宽度需要在 20–100% 之间。');
       const caption = item.caption ?? '';
       if (typeof caption !== 'string' || caption.length > 500) throw new Error('图片说明需为字符串，最多 500 字符。');
-      return { src: item.src, width, caption };
+      const cleanImage = { src: item.src, width, caption };
+      if (item.sourceKey !== undefined) {
+        if (typeof item.sourceKey !== 'string' || !/^[a-f0-9]{64}$/.test(item.sourceKey)) throw new Error('图片标识无效。');
+        cleanImage.sourceKey = item.sourceKey;
+      }
+      return cleanImage;
     });
     return clean;
   });
@@ -105,8 +128,16 @@ function validateDocument(value, includeProfiles = true) {
 }
 let doc = validateDocument(defaultDocument);
 function persist() {
-  try { localStorage.setItem(storageKey, JSON.stringify(doc)); $('storage-status').textContent = '草稿已自动保存'; }
-  catch { $('storage-status').textContent = '浏览器无法保存草稿，请用「保存内容」备份。'; }
+  try {
+    const saved = sourceMode ? { style: doc.style, styleProfiles: doc.styleProfiles, imageWidths: sourceImageWidths, highlights: sourceHighlights } : doc;
+    localStorage.setItem(storageKey, JSON.stringify(saved));
+    $('storage-status').textContent = sourceMode ? '样式已自动保存，内容以 Markdown 为准' : '草稿已自动保存';
+    return true;
+  }
+  catch {
+    $('storage-status').textContent = sourceMode ? '浏览器无法保存样式。' : '浏览器无法保存草稿，请用「保存内容」备份。';
+    return false;
+  }
 }
 let draggedPage = null;
 function clearDragState() {
@@ -114,7 +145,7 @@ function clearDragState() {
   for (const button of $('pages').children) button.classList.remove('dragging', 'drop-before', 'drop-after');
 }
 function movePage(from, to) {
-  if (from === to || from < 0 || to < 0 || to >= doc.pages.length) return;
+  if (sourceMode || from === to || from < 0 || to < 0 || to >= doc.pages.length) return;
   const selected = doc.pages[current];
   const [page] = doc.pages.splice(from, 1);
   doc.pages.splice(to, 0, page);
@@ -126,8 +157,8 @@ function showPages() {
   doc.pages.forEach((page, index) => {
     const button = document.createElement('button');
     button.className = 'page-button' + (index === current ? ' active' : '');
-    button.draggable = true;
-    button.title = '拖动排序；也可按 Alt + ↑ / ↓ 移动';
+    button.draggable = !sourceMode;
+    button.title = sourceMode ? '在 Markdown 中调整页面顺序' : '拖动排序；也可按 Alt + ↑ / ↓ 移动';
     button.setAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
     button.ondragstart = event => {
       draggedPage = page; button.classList.add('dragging');
@@ -152,7 +183,7 @@ function showPages() {
       clearDragState(); movePage(from, to);
     };
     button.onkeydown = event => {
-      if (!event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      if (sourceMode || !event.altKey || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
       event.preventDefault();
       const from = doc.pages.indexOf(page), to = from + (event.key === 'ArrowUp' ? -1 : 1);
       if (to < 0 || to >= doc.pages.length) return;
@@ -200,6 +231,8 @@ function render() {
   $('subtitle-label').hidden = !isCover;
   $('highlight-label').hidden = !page.title.trim();
   $('highlight-status').textContent = result.highlightWarning;
+  $('source-highlight-status').textContent = result.highlightWarning;
+  $('source-highlight-controls').hidden = !sourceMode || !page.title.trim();
   $('highlight-status').hidden = !page.title.trim();
   for (const field of ['coverTitleSize', 'coverSubtitleSize', 'pageTitleSize']) $(field + '-value').textContent = doc.style[field] + ' px';
   $('font-size-value').textContent = doc.style.bodySize + ' px';
@@ -211,6 +244,7 @@ function render() {
 }
 function syncEditor() {
   for (const field of fields) $(field).value = doc.pages[current][field] ?? '';
+  $('source-highlight').value = doc.pages[current].highlight ?? '';
   for (const field of styleFields) $(field).value = doc.style[field];
   showImages(); showPages(); render();
 }
@@ -227,35 +261,89 @@ for (const field of fields) {
 for (const field of styleFields) {
   $(field).addEventListener('input', () => {
     const previousStyle = { ...doc.style };
+    const previousPages = doc.pages;
     const previousProfiles = structuredClone(doc.styleProfiles);
     if (field === 'aspectRatio') {
       doc.styleProfiles[doc.style.aspectRatio] = { ...doc.style };
       doc.style = { ...doc.styleProfiles[$(field).value] };
+      if (sourceMode && sourcePages.length) { doc.pages = structuredClone(sourcePages); applySourceOverrides(doc.pages); }
     } else {
       doc.style[field] = field === 'accent' ? $(field).value : Number($(field).value);
     }
     doc.styleProfiles[doc.style.aspectRatio] = { ...doc.style };
     try { checkDocumentSize(doc); }
     catch (error) {
-      doc.style = previousStyle; doc.styleProfiles = previousProfiles;
+      doc.style = previousStyle; doc.styleProfiles = previousProfiles; doc.pages = previousPages;
       syncEditor(); $('feedback').textContent = error.message; return;
     }
     persist(); syncEditor();
   });
 }
+// Unique titles keep their settings when body text changes or pages move.
+// For repeated titles, use a content digest so rearranging them cannot swap settings.
+function sourcePageKey(index) {
+  const page = sourcePages[index];
+  const matching = sourcePages.filter(item => item.type === page.type && item.title === page.title);
+  if (matching.length === 1) return JSON.stringify([page.type, page.title, 0]);
+  const content = JSON.stringify([page.body, page.subtitle, page.note]);
+  let first = 2166136261, second = 2246822507;
+  for (let i = 0; i < content.length; i++) {
+    first = Math.imul(first ^ content.charCodeAt(i), 16777619);
+    second = Math.imul(second ^ content.charCodeAt(i), 3266489909);
+  }
+  const digest = (first >>> 0).toString(16).padStart(8, '0') + (second >>> 0).toString(16).padStart(8, '0');
+  return JSON.stringify([page.type, page.title, digest]);
+}
+$('source-highlight').oninput = () => {
+  if (!sourceMode || !sourcePages[current]) return;
+  const page = doc.pages[current], previous = page.highlight;
+  page.highlight = $('source-highlight').value;
+  try { checkDocumentSize(doc); }
+  catch (error) { page.highlight = previous; $('source-highlight').value = previous; $('feedback').textContent = error.message; return; }
+  sourceHighlights[sourcePageKey(current)] = page.highlight;
+  persist(); render();
+};
+$('reset-source-highlight').onclick = () => {
+  if (!sourceMode || !sourcePages[current]) return;
+  delete sourceHighlights[sourcePageKey(current)];
+  doc.pages = structuredClone(sourcePages); applySourceOverrides(doc.pages);
+  persist(); syncEditor();
+};
+function applySourceOverrides(pages) {
+  pages.forEach((page, index) => {
+    const key = sourcePageKey(index);
+    if (Object.hasOwn(sourceHighlights, key)) page.highlight = sourceHighlights[key];
+  });
+  const widths = sourceImageWidths[doc.style.aspectRatio];
+  for (const page of pages) for (const image of page.images ?? []) {
+    if (widths[image.sourceKey] !== undefined) image.width = widths[image.sourceKey];
+  }
+}
 function showImages() {
-  $('image-list').replaceChildren();
+  const list = $(sourceMode ? 'source-image-list' : 'image-list');
+  list.replaceChildren();
+  $('source-image-controls').hidden = !sourceMode || doc.pages[current].type === 'cover' || !doc.pages[current].images?.length;
+  const widthControls = [];
   (doc.pages[current].images ?? []).forEach((item, index) => {
     const row = document.createElement('div'); row.className = 'image-row';
     const thumbnail = document.createElement('img'); thumbnail.src = item.src; thumbnail.alt = `图片${index + 1}`;
     const label = document.createElement('label');
     const text = document.createElement('span'); text.textContent = `图片${index + 1} · 宽度 ${item.width}%`;
-    const slider = document.createElement('input'); slider.type = 'range'; slider.min = 20; slider.max = 100; slider.step = 5; slider.value = item.width;
+    const slider = document.createElement('input'); slider.type = 'range'; slider.min = 20; slider.max = 100; slider.step = 1; slider.value = item.width;
     slider.setAttribute('aria-label', `图片${index + 1}宽度`);
+    widthControls.push({ item, slider, text, index });
     slider.oninput = () => {
       const previous = item.width; item.width = Number(slider.value);
       try { checkDocumentSize(doc); }
       catch (error) { item.width = previous; slider.value = previous; $('feedback').textContent = error.message; return; }
+      if (sourceMode) {
+        sourceImageWidths[doc.style.aspectRatio][item.sourceKey] = item.width;
+        applySourceOverrides(doc.pages);
+        for (const control of widthControls) {
+          control.slider.value = control.item.width;
+          control.text.textContent = `图片${control.index + 1} · 宽度 ${control.item.width}%`;
+        }
+      }
       text.textContent = `图片${index + 1} · 宽度 ${item.width}%`; persist(); render();
     };
     const remove = document.createElement('button'); remove.textContent = '删除'; remove.setAttribute('aria-label', `删除图片${index + 1}`);
@@ -265,7 +353,19 @@ function showImages() {
       page.body = page.body.split('\n').filter(line => line.trim() !== `[图片${index + 1}]`).map(line => line.replace(/^\s*\[图片(\d+)\]\s*$/, (match, number) => Number(number) > index + 1 ? `[图片${Number(number) - 1}]` : match)).join('\n');
       persist(); syncEditor();
     };
-    label.append(text, slider); row.append(thumbnail, label, remove);
+    label.append(text, slider); row.append(thumbnail, label);
+    if (sourceMode) {
+      const reset = document.createElement('button'); reset.textContent = '重置'; reset.setAttribute('aria-label', `重置图片${index + 1}宽度`);
+      reset.onclick = () => {
+        delete sourceImageWidths[doc.style.aspectRatio][item.sourceKey];
+        doc.pages = structuredClone(sourcePages); applySourceOverrides(doc.pages);
+        persist(); syncEditor();
+      };
+      row.append(reset); list.append(row);
+      if (item.caption) { const caption = document.createElement('p'); caption.className = 'hint'; caption.textContent = item.caption; list.append(caption); }
+      return;
+    }
+    row.append(remove);
     const captionLabel = document.createElement('label'); captionLabel.textContent = `图片${index + 1}说明`;
     const caption = document.createElement('textarea'); caption.rows = 2; caption.maxLength = 500; caption.placeholder = '可留空，在图片下方显示'; caption.value = item.caption ?? '';
     caption.oninput = () => {
@@ -274,7 +374,7 @@ function showImages() {
       catch (error) { item.caption = previous; caption.value = previous ?? ''; $('feedback').textContent = error.message; return; }
       persist(); render();
     };
-    captionLabel.append(caption); $('image-list').append(row, captionLabel);
+    captionLabel.append(caption); list.append(row, captionLabel);
   });
 }
 let imageInsertion = null;
@@ -398,7 +498,83 @@ async function exportImages(all) {
 }
 $('export').onclick = () => exportImages(false);
 $('export-all').onclick = () => exportImages(true);
-async function initialize() {
+function applyMarkdown(payload) {
+  $('source-filename').textContent = payload.filename;
+  if (payload.error) throw new Error(payload.error);
+  if (payload.revision !== sourceRevision) {
+    const next = validateDocument({ ...doc, pages: payload.pages });
+    sourcePages = structuredClone(next.pages);
+    applySourceOverrides(next.pages);
+    doc = next;
+    current = Math.min(current, doc.pages.length - 1);
+    sourceRevision = payload.revision;
+    syncEditor();
+    $('source-status').textContent = '已同步 · ' + new Date().toLocaleTimeString('zh-CN');
+  }
+  $('source-error').textContent = '';
+}
+async function pollMarkdown() {
+  const generation = sourceGeneration;
+  try {
+    const response = await fetch(sourceUrl(sourceRevision), { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    if (generation !== sourceGeneration || !sourceMode) return;
+    if (response.status === 204) { $('source-error').textContent = ''; return; }
+    if (response.status !== 200 && response.status !== 422) throw new Error('暂时无法读取 Markdown，请检查本地服务。');
+    const payload = await response.json();
+    if (generation === sourceGeneration && sourceMode) applyMarkdown(payload);
+  } catch (error) {
+    if (generation === sourceGeneration && sourceMode) $('source-error').textContent = error.message + ' 已保留上一次预览。';
+  } finally {
+    if (generation === sourceGeneration && sourceMode) sourceTimer = setTimeout(pollMarkdown, 1000);
+  }
+}
+async function initializeMarkdown(payload) {
+  while (!payload) {
+    try {
+      const response = await fetch(sourceUrl(), { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (response.status === 204 || response.status === 404) return false;
+      if (response.status !== 200 && response.status !== 422) throw new Error('服务暂时无法读取内容。');
+      payload = await response.json();
+    } catch {
+      $('feedback').textContent = '连接本地服务失败，正在重试；不会切换到其他内容源。';
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  $('feedback').textContent = '';
+  sourceMode = true;
+  sourcePath = payload.path || sourcePath;
+  $('open-source').textContent = '内容来源 · Markdown';
+  storageKey = 'social-image-studio-md-styles-' + payload.sourceId;
+  // Content is always read from Markdown; local storage holds only the styles.
+  doc.pages = [{ type: 'article', title: '', body: '' }];
+  try {
+    const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+    if (saved) {
+      doc = validateDocument({ ...doc, style: saved.style, styleProfiles: saved.styleProfiles });
+      for (const [key, value] of Object.entries(saved.highlights ?? {})) {
+        if (typeof value === 'string' && value.length <= 10000 && key.length <= 20050) sourceHighlights[key] = value;
+      }
+      for (const ratio of ['3:4', '9:16']) {
+        for (const [key, width] of Object.entries(saved.imageWidths?.[ratio] ?? {})) {
+          if (/^[a-f0-9]{64}$/.test(key) && Number.isInteger(width) && width >= 20 && width <= 100) sourceImageWidths[ratio][key] = width;
+        }
+      }
+    }
+  } catch { $('feedback').textContent = '样式读取失败，已使用默认样式。'; }
+  $('content-fields').hidden = true; $('source-panel').hidden = false;
+  $('editor-heading').textContent = 'Markdown 实时预览';
+  for (const id of ['import', 'save', 'add', 'delete']) $(id).hidden = true;
+  $('page-order-hint').textContent = '页面顺序由 Markdown 决定';
+  $('preview-hint').textContent = '保存 Markdown 自动更新 · 内容保存在源文件 · 导出不含编辑界面';
+  $('storage-status').textContent = '内容以 Markdown 文件为准';
+  $('source-status').textContent = '正在读取文件…';
+  try { applyMarkdown(payload); }
+  catch (error) { $('source-error').textContent = error.message; syncEditor(); }
+  sourceTimer = setTimeout(pollMarkdown, 1000);
+  return true;
+}
+async function initializeWeb() {
+  $('open-source').textContent = '内容来源 · 网页';
   try {
     const response = await fetch('initial.json', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
     if (response.status === 200) {
@@ -439,6 +615,81 @@ async function initialize() {
   // System fonts are sufficient for the first paint; never block the editor on fonts.
   document.fonts.ready.then(render).catch(() => {});
 }
-initialize().catch(error => {
-  $('feedback').textContent = '页面初始化失败：' + error.message;
+function positionSourceMenu() {
+  const menu = $('source-menu');
+  if (!menu.matches(':popover-open')) return;
+  const anchor = $('open-source').getBoundingClientRect();
+  menu.style.left = Math.max(16, Math.min(anchor.left, window.innerWidth - menu.offsetWidth - 16)) + 'px';
+  menu.style.top = anchor.bottom + 10 + 'px';
+}
+function updateSourceChoice() {
+  const markdown = $('source-choice').value === 'markdown';
+  $('source-path-label').hidden = !markdown;
+  $('source-choice-hint').textContent = markdown ? '在编辑器中保存文件，预览自动更新。' : '直接在网页编辑，草稿自动保存在当前浏览器。';
+}
+$('open-source').addEventListener('click', () => {
+  if ($('source-menu').matches(':popover-open')) return;
+  $('source-choice').value = sourceMode ? 'markdown' : 'web';
+  $('source-path').value = sourcePath;
+  $('source-choice-error').textContent = '';
+  updateSourceChoice();
 });
+$('source-menu').addEventListener('toggle', positionSourceMenu);
+$('source-choice').onchange = updateSourceChoice;
+window.addEventListener('resize', positionSourceMenu);
+window.addEventListener('scroll', positionSourceMenu, true);
+$('apply-source').onclick = async () => {
+  if (switchingSource || exporting) return;
+  switchingSource = true; $('apply-source').disabled = true;
+  $('source-choice-error').textContent = '';
+  try {
+    const mode = $('source-choice').value;
+    const path = $('source-path').value.trim();
+    let payload;
+    if (mode === 'markdown') {
+      if (!path) throw new Error('请填写 Markdown 文件的完整路径。');
+      const response = await fetch('source.json?' + new URLSearchParams({ path }), { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      payload = await response.json();
+      if (response.status !== 200 || payload.error) throw new Error(payload.error || '无法读取这个文件。');
+      validateDocument({ ...defaultDocument, pages: payload.pages });
+    }
+    // Validate the new source before leaving the current draft or stopping polling.
+    if (!persist()) throw new Error('当前内容或样式未能保存，请先备份或腾出浏览器存储空间再切换。');
+    localStorage.setItem(SOURCE_CHOICE_KEY, JSON.stringify({ mode, path: payload?.path || path }));
+    sourceGeneration++; clearTimeout(sourceTimer);
+    sourceMode = false; sourceRevision = ''; sourcePages = [];
+    sourceHighlights = Object.create(null);
+    sourceImageWidths = { '3:4': {}, '9:16': {} };
+    current = 0; storageKey = 'social-image-studio-v1';
+    doc = validateDocument(defaultDocument);
+    $('downloads').replaceChildren(); $('feedback').textContent = '';
+    if (mode === 'markdown') {
+      sourcePath = payload.path || path;
+      await initializeMarkdown(payload);
+    } else {
+      $('content-fields').hidden = false; $('source-panel').hidden = true;
+      $('editor-heading').textContent = '编辑内容';
+      for (const id of ['import', 'save', 'add', 'delete']) $(id).hidden = false;
+      $('page-order-hint').textContent = '拖动页面可调整顺序';
+      $('preview-hint').textContent = '输入即更新 · 内容保存在当前浏览器 · 导出不含编辑界面';
+      $('storage-status').textContent = '草稿保存在当前浏览器';
+      await initializeWeb();
+    }
+    showPages(); $('source-menu').hidePopover();
+  } catch (error) { $('source-choice-error').textContent = error.message; }
+  finally { switchingSource = false; $('apply-source').disabled = false; }
+};
+async function initialize() {
+  if (sourceChoice?.mode !== 'web' && await initializeMarkdown()) return;
+  await initializeWeb();
+}
+$('open-source').disabled = true;
+$('content-fields').inert = true;
+for (const id of ['import', 'save', 'add', 'delete']) $(id).disabled = true;
+initialize().then(() => {
+  $('content-fields').inert = false;
+  $('import').disabled = false; $('save').disabled = false;
+  showPages();
+}).catch(error => {
+  $('feedback').textContent = '页面初始化失败：' + error.message;
+}).finally(() => { $('open-source').disabled = false; });

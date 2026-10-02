@@ -91,3 +91,11 @@ python3 skills/social-image-studio/scripts/serve.py
 ```bash
 python3 skills/social-image-studio/scripts/serve.py --content /absolute/path/social-pages.json
 ```
+
+以 Markdown 为唯一内容源，保存文件后自动刷新图片预览：
+
+```bash
+python3 skills/social-image-studio/scripts/serve.py --markdown /absolute/path/post.md
+```
+
+此模式在网页中只调整样式和导出，内容与页面顺序由 Markdown 决定；支持 `##` 自动分页、`---` 显式分页和 Obsidian 本地图片。

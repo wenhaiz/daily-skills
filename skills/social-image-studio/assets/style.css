@@ -30,8 +30,8 @@ textarea { resize: vertical; line-height: 1.7; }
 input[type="color"] { padding: 4px; height: 40px; }
 input[type="range"] { padding: 0; }
 .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-#style-menu { position: fixed; inset: auto; margin: 0; width: min(340px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; color: #262b34; box-shadow: 0 10px 36px #14213c26; }
-#style-menu::backdrop { background: transparent; pointer-events: none; }
+#style-menu, #source-menu { position: fixed; inset: auto; margin: 0; width: min(340px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; color: #262b34; box-shadow: 0 10px 36px #14213c26; }
+#style-menu::backdrop, #source-menu::backdrop { background: transparent; pointer-events: none; }
 #style-menu h2 { font-size: 15px; }
 #style-menu label { margin-bottom: 16px; gap: 6px; }
 #style-menu input[type="range"] { accent-color: #2864d7; }
@@ -57,9 +57,15 @@ canvas { display: block; width: 100%; height: auto; }
 
 #note-label { grid-column: 1 / -1; }
 
-#highlight-status:not(:empty) { color: #b45309; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 7px; padding: 10px 12px; }
+#highlight-status:not(:empty), #source-highlight-status:not(:empty) { color: #b45309; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 7px; padding: 10px 12px; }
 
 .page-button[draggable="true"] { cursor: grab; }
 .page-button.dragging { opacity: .45; }
 .page-button.drop-before { box-shadow: 0 -3px 0 #4294d5; }
 .page-button.drop-after { box-shadow: 0 3px 0 #4294d5; }
+
+.source-name { overflow-wrap: anywhere; font-size: 15px; }
+#source-status { font-size: 12px; color: #64748b; line-height: 1.8; }
+#source-error:not(:empty) { color: #b45309; background: #fff7ed; padding: 12px; border-radius: 7px; line-height: 1.7; }
+#source-menu h2 { margin-bottom: 12px; }
+#source-choice-error:not(:empty) { color: #b45309; line-height: 1.7; }
