@@ -40,6 +40,11 @@
       "version": "1.0.0",
       "path": "skills/social-image-studio",
       "description": "Create consistent social media image cards with a local editor and PNG export"
+    },
+    "simplicity-review": {
+      "version": "1.0.0",
+      "path": "skills/simplicity-review",
+      "description": "评审需求方案时主动挑战过度设计，推动简洁可执行"
     }
   }
 }

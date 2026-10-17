@@ -1,141 +1,74 @@
 ---
 name: project-docs-manager
-description: Initialize, audit, maintain, and incrementally upgrade a repository documentation system built around Ideas, executable living Plans, ProductFact, and Changelog. Use when Codex needs to establish project documentation, create or implement from a Plan, reorganize an existing docs tree, keep documentation synchronized with implementation, close a feature into stable facts and delivery history, or migrate a project after this skill's documentation contract changes.
+description: Manage a repository-wide documentation lifecycle built around Ideas, executable Plans, ProductFact, and Changelog. Use for initializing, auditing, reorganizing, or upgrading that system; implementing work from its Plan contract; or closing a delivery across Plan, facts, and history. Do not use for routine single-document edits or ordinary code-aligned ProductFact updates unless the user requests the lifecycle handoff.
 ---
 
 # Project Docs Manager
 
-Maintain project documentation as a lifecycle instead of a loose collection of files.
+Maintain the documentation system without replacing project-owned structure or content. Code and live configuration remain the final source of truth; repository instructions override this skill's defaults.
 
-## Core rules
+## Choose the operation
 
-- Treat code and live configuration as the final source of truth.
-- Preserve useful existing documentation. Do not replace a repository's taxonomy before inspecting it.
-- Separate future ideas, active development history, stable current facts, and delivery history.
-- Start with the smallest useful structure and the project's one to three highest-value domains.
-- Make initialization and upgrades additive by default. Never overwrite project-owned content blindly.
-- Follow the repository's `AGENTS.md` and local conventions before this skill's defaults.
+- **Audit or initialize:** inspect the current structure and add only missing foundations.
+- **Plan work:** create, continue, or execute a living Plan under the repository's contract.
+- **Close delivery:** synchronize the completed Plan, stable facts, Changelog, and archive.
+- **Upgrade:** apply only migrations not recorded by the repository manifest.
 
-Read [references/document-model.md](references/document-model.md) when deciding where content belongs or adapting the model to a repository.
-Read [references/migrations.md](references/migrations.md) whenever a project has `Docs/.project-docs.json` or the user asks to upgrade an existing documentation system.
-Read [references/exec-plans.md](references/exec-plans.md) whenever creating a Plan, implementing from a Plan, or upgrading a project to the executable Plan contract.
+For an ordinary edit to one existing document, follow the repository's own instructions directly and do not load this workflow.
 
-## Select the operation
+## Load only what the operation needs
 
-1. **Audit**: inspect the current documentation structure, rules, scripts, and manifest. Do not write files.
-2. **Initialize**: establish the minimum documentation lifecycle in a project that does not have it.
-3. **Maintain**: route new or changed knowledge to the correct document and keep links consistent.
-4. **Close a delivery**: update stable facts and evidence, add the concise changelog record, complete the Plan, then move it to the Plan archive.
-5. **Upgrade**: compare the project's recorded contract version with this skill's migration contract and apply only the missing migrations.
+- Read [references/document-model.md](references/document-model.md) when choosing or adapting the Ideas / Plans / ProductFact / Changelog structure.
+- Read [references/exec-plans.md](references/exec-plans.md) when creating or implementing a Plan.
+- Read [references/migrations.md](references/migrations.md) only when initializing, reconstructing, or upgrading a versioned documentation system.
 
-## Audit first
+Do not load all references by default.
 
-Run:
+## Audit and initialize
+
+Inspect before proposing changes:
 
 ```bash
 python3 <skill-dir>/scripts/project_docs.py inspect --root <repo-root>
 ```
 
-Also inspect:
-
-- repository instructions such as `AGENTS.md`
-- existing documentation entrypoints and naming conventions
-- source directories, build/test commands, and major business domains
-- current uncommitted changes before editing
-
-Report the existing structure, conflicts with the model, and the smallest useful next action. An audit request does not authorize writes.
-
-## Initialize
-
-Preview the scaffold first:
+For initialization, preview first and apply only when creation or migration is authorized:
 
 ```bash
 python3 <skill-dir>/scripts/project_docs.py init --root <repo-root> --project-name <name>
-```
-
-Apply only after the user requested creation or migration:
-
-```bash
 python3 <skill-dir>/scripts/project_docs.py init --root <repo-root> --project-name <name> --apply
 ```
 
-The script creates missing baseline files only. It refuses to overwrite existing files. After scaffolding:
+Preserve the existing taxonomy and project content. Add the smallest useful structure, concrete code evidence, and real watched paths; never fabricate a complete domain catalog.
 
-1. Adapt `Docs/README.md` and repository instructions to the real project.
-2. Make the Plan contract discoverable and add a repository instruction that requires a full ExecPlan for complex work.
-3. Identify one to three core domains from code; do not invent a complete taxonomy.
-4. Create domain facts using `Docs/0-ProductFact/90-templates/domain-fact-template.md`.
-5. Add concrete `watch_paths`, code evidence, and a real `verified_commit`.
-6. Run the generated fact check and resolve broken paths or stale facts.
-7. Record the skill contract version in `Docs/.project-docs.json` only after the repository matches it.
+## Plan work
 
-## Create and execute Plans
+Search active and archived Plan directories before creating a new Plan. Continue an existing active Plan for the same work; otherwise follow the repository's naming and template rules.
 
-Before creating a Plan, search the configured active and archived Plan directories for the same work. Continue the existing active Plan when one exists. Otherwise, follow the repository's naming convention; when none exists, use `yyyy-MM-dd-<kebab-title>.md`.
+Before editing code, read the complete Plan and repository Plan contract, check them against the current worktree, and keep the Plan current as decisions or scope change. Validate observable behavior, not only file changes or compilation. A complex or multi-stage effort uses the full ExecPlan requirements in `references/exec-plans.md`.
 
-Use two levels of Plan:
+## Close delivery
 
-- **Standard Plan**: use for bounded work that still benefits from written scope and verification. It must remain self-contained, current, and outcome-focused.
-- **Full ExecPlan**: use for complex features, significant refactors, cross-module changes, migrations, multi-hour work, meaningful unknowns, or work that needs staged validation or prototypes.
+When implementation and required validation are complete:
 
-Every Plan must explain the purpose, relevant repository context, scope, implementation approach, current progress, decisions, discoveries, validation, outcomes, and ProductFact handoff. A full ExecPlan must additionally provide novice-oriented repository navigation, independently verifiable milestones, exact commands with working directories and expected observations, interfaces and dependencies, idempotence and recovery guidance, and concise evidence.
+1. Record final implementation and verification in the Plan.
+2. Update stable ProductFact from final code and refresh its evidence.
+3. Add a concise Changelog entry when the delivery is meaningful.
+4. Remove a source Idea only after its fact handoff is complete.
+5. Mark the Plan `completed`, move it to the configured archive without renaming it, and update old links.
 
-When implementing from a Plan:
+Never archive a Plan whose status is absent, ambiguous, or not `completed`.
 
-1. Read the entire Plan and the repository's configured Plan contract before editing.
-2. Confirm the Plan still matches the working tree and update stale assumptions before proceeding.
-3. Work through milestones within the user's authorized scope without pausing merely to ask for the next step.
-4. At every stopping point, update timestamped progress and state what is done and what remains.
-5. Record unexpected behavior and evidence in `Surprises & Discoveries`; record changed choices and rationale in `Decision Log`.
-6. Keep every section consistent after changing course so the current Plan remains sufficient for a new contributor to resume.
-7. Validate observable behavior or a reproducible before/after test, not only compilation or file changes.
-8. Complete `Outcomes & Retrospective` and the normal ProductFact and Changelog handoff before marking the Plan `completed`.
+## Upgrade
 
-Autonomous continuation never overrides the user's instructions, repository rules, approval boundaries, or destructive-action safeguards. Do not require or create commits unless the user or repository workflow authorizes them.
-
-## Maintain and close work
-
-Route documentation by intent:
-
-- Future possibility without active development -> `Docs/2-Ideas/`
-- Scoped development and its changing progress -> `Docs/1-Plans/`
-- Completed development history -> `Docs/1-Plans/archived/`
-- Stable intent, decisions, and current code-backed behavior -> `Docs/0-ProductFact/`
-- Concise user-visible or behaviorally meaningful delivery record -> `Docs/3-Changelog/<year>/`
-
-When work starts, create or continue one Plan using the configured Plan contract and template. During implementation, keep that same Plan current. When work finishes:
-
-1. Record implementation and verification results in the Plan.
-2. Update stable domain facts from final code, not from the original proposal.
-3. Refresh evidence, `watch_paths`, and `verified_commit`.
-4. Add a short Changelog entry when the change is meaningful.
-5. Remove the source Idea after implementation and fact handoff are complete.
-6. Mark the Plan completed only after ProductFact is current.
-7. Move the completed Plan to `<plans>/archived/`, preserve its filename, and update repository links that referenced its previous path.
-
-Only archive Plans whose status is explicitly `completed`. Keep `draft`, `active`, `blocked`, and `superseded` Plans in the main Plan directory unless the repository defines another rule. If status is absent or ambiguous, do not infer completion from the filename or implementation state.
-
-## Upgrade projects after this skill changes
-
-Do not assume installing a new skill version automatically changes repositories. Upgrade when this skill is invoked in a project:
-
-1. Inspect `Docs/.project-docs.json`.
-2. Read every unapplied entry in [references/migrations.md](references/migrations.md), in version order.
-3. Compare migration requirements with real repository state.
-4. Preview the proposed file changes and protect project-specific content.
-5. Apply semantic edits with the normal file-editing workflow; use scripts only for deterministic checks.
-6. Validate links, paths, facts, and repository instructions.
-7. Update `contract_version` and `applied_migrations` only after the migration succeeds.
-
-If no manifest exists but the repository already resembles this system, reconstruct the manifest from evidence instead of reinitializing or moving files automatically.
+Inspect the manifest and read every unapplied migration in version order. Compare each requirement with the real repository, preview semantic edits, protect project-specific content, and update the recorded contract version only after validation succeeds. If no manifest exists, reconstruct it from evidence rather than reinitializing an established system.
 
 ## Validation
 
-Use validation proportional to the change:
+Use checks proportional to the change:
 
-- Always inspect changed links and paths.
-- Run the repository's ProductFact check script at its configured path when ProductFact domains or watched code changed. Prefer `<product-fact>/check.sh`; continue supporting `scripts/product_fact/check.sh` in projects that still use the legacy location.
-- Confirm no project-owned document was unintentionally replaced.
-- For a taxonomy migration, search the entire repository for old paths.
-- After archiving a Plan, search the entire repository for references to its previous path.
-- Keep the Plan active if stable facts, verification, or migration steps remain incomplete.
+- inspect changed links and paths;
+- run the configured ProductFact check when facts or watched code changed;
+- search for old paths after taxonomy changes or Plan archival;
+- confirm no project-owned document was replaced;
+- keep the Plan active while required facts, evidence, or validation remain incomplete.
