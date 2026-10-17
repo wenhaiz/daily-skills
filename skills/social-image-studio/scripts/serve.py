@@ -10,6 +10,7 @@ from threading import Lock
 from urllib.parse import parse_qs, urlsplit
 
 from markdown_source import MarkdownSource, SourceError
+from file_picker import MarkdownFilePicker, PickerError, validate_picker_request
 
 
 class SourceCache:
@@ -59,6 +60,7 @@ def main():
     assets = Path(__file__).resolve().parents[1] / 'assets'
     source = MarkdownSource(args.markdown) if args.markdown else None
     source_cache = SourceCache()
+    file_picker = MarkdownFilePicker()
 
     class Handler(SimpleHTTPRequestHandler):
         def log_request(self, code='-', size='-'):
@@ -68,6 +70,29 @@ def main():
         def end_headers(self):
             self.send_header('Cache-Control', 'no-store')
             super().end_headers()
+
+        def do_POST(self):
+            if self.path != '/choose-markdown':
+                self.send_error(404)
+                return
+            try:
+                validate_picker_request(self.headers, self.server.server_port)
+                path = file_picker.choose()
+                if path is None:
+                    self.send_response(204)
+                    self.end_headers()
+                    return
+                payload, status = {'path': path}, 200
+            except PickerError as error:
+                payload, status = {'error': str(error)}, error.status
+                # Rejected body bytes must not become another request.
+                self.close_connection = True
+            data = json.dumps(payload, ensure_ascii=False).encode('utf-8')
+            self.send_response(status)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
         def do_GET(self):
             # Always return complete assets while iterating on the local editor.

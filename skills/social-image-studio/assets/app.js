@@ -5,6 +5,10 @@ const DEFAULT_STYLE_PROFILES = {
     "accent": "#319fff",
     "bodySize": 42,
     "coverTitleSize": 112,
+    "coverHighlightWidth": 30,
+    "watermarkText": "",
+    "watermarkOpacity": 12,
+    "watermarkSize": 24,
     "coverSubtitleSize": 36,
     "pageTitleSize": 56,
     "lineHeight": 1.55,
@@ -17,6 +21,10 @@ const DEFAULT_STYLE_PROFILES = {
     "accent": "#319fff",
     "bodySize": 44,
     "coverTitleSize": 112,
+    "coverHighlightWidth": 30,
+    "watermarkText": "",
+    "watermarkOpacity": 12,
+    "watermarkSize": 24,
     "coverSubtitleSize": 36,
     "pageTitleSize": 56,
     "lineHeight": 1.55,
@@ -45,6 +53,7 @@ let sourcePath = typeof sourceChoice?.path === 'string' ? sourceChoice.path : ''
 let sourceTimer;
 let sourceGeneration = 0;
 let switchingSource = false;
+let choosingSource = false;
 function sourceUrl(revision) {
   const query = new URLSearchParams();
   if (sourcePath) query.set('path', sourcePath);
@@ -77,6 +86,14 @@ function validateDocument(value, includeProfiles = true) {
   if (typeof letterSpacing !== 'number' || !Number.isFinite(letterSpacing) || letterSpacing < 0 || letterSpacing > 6) throw new Error('正文字间距需要在 0–6 px 之间。');
   const aspectRatio = value.style.aspectRatio ?? '3:4';
   if (!['3:4', '9:16'].includes(aspectRatio)) throw new Error('图片比例需为 3:4 或 9:16。');
+  const coverHighlightWidth = value.style.coverHighlightWidth ?? DEFAULT_STYLE.coverHighlightWidth;
+  if (!Number.isInteger(coverHighlightWidth) || coverHighlightWidth < 8 || coverHighlightWidth > 60) throw new Error('封面高亮粗细需为 8–60 px 的整数。');
+  const watermarkText = value.style.watermarkText ?? '';
+  if (typeof watermarkText !== 'string' || watermarkText.length > 80 || /[\r\n]/.test(watermarkText)) throw new Error('水印文字需为单行，最多 80 字符。');
+  const watermarkOpacity = value.style.watermarkOpacity ?? 12;
+  if (!Number.isInteger(watermarkOpacity) || watermarkOpacity < 5 || watermarkOpacity > 30) throw new Error('水印不透明度需为 5–30% 的整数。');
+  const watermarkSize = value.style.watermarkSize ?? 24;
+  if (!Number.isInteger(watermarkSize) || watermarkSize < 20 || watermarkSize > 32) throw new Error('水印字号需为 20–32 px 的整数。');
   const titleSizes = {};
   for (const [field, label, min, max] of [
     ['coverTitleSize', '封面标题', 64, 160],
@@ -113,7 +130,7 @@ function validateDocument(value, includeProfiles = true) {
     });
     return clean;
   });
-  const normalized = { version: 1, style: { accent: value.style.accent, bodySize: value.style.bodySize, lineHeight, marginX, marginY, letterSpacing, aspectRatio, ...titleSizes }, pages };
+  const normalized = { version: 1, style: { accent: value.style.accent, bodySize: value.style.bodySize, lineHeight, marginX, marginY, letterSpacing, aspectRatio, coverHighlightWidth, watermarkText, watermarkOpacity, watermarkSize, ...titleSizes }, pages };
   if (includeProfiles) {
     if (value.styleProfiles !== undefined && (!value.styleProfiles || typeof value.styleProfiles !== 'object' || Array.isArray(value.styleProfiles))) throw new Error('样式配置需为对象。');
     normalized.styleProfiles = {};
@@ -234,7 +251,9 @@ function render() {
   $('source-highlight-status').textContent = result.highlightWarning;
   $('source-highlight-controls').hidden = !sourceMode || !page.title.trim();
   $('highlight-status').hidden = !page.title.trim();
-  for (const field of ['coverTitleSize', 'coverSubtitleSize', 'pageTitleSize']) $(field + '-value').textContent = doc.style[field] + ' px';
+  for (const field of ['coverTitleSize', 'coverSubtitleSize', 'pageTitleSize', 'coverHighlightWidth']) $(field + '-value').textContent = doc.style[field] + ' px';
+  $('watermarkOpacity-value').textContent = doc.style.watermarkOpacity + '%';
+  $('watermarkSize-value').textContent = doc.style.watermarkSize + ' px';
   $('font-size-value').textContent = doc.style.bodySize + ' px';
   $('line-height-value').textContent = doc.style.lineHeight.toFixed(2) + ' 倍';
   $('margin-value').textContent = '两边各 ' + doc.style.marginX + ' px';
@@ -268,7 +287,7 @@ for (const field of styleFields) {
       doc.style = { ...doc.styleProfiles[$(field).value] };
       if (sourceMode && sourcePages.length) { doc.pages = structuredClone(sourcePages); applySourceOverrides(doc.pages); }
     } else {
-      doc.style[field] = field === 'accent' ? $(field).value : Number($(field).value);
+      doc.style[field] = ['accent', 'watermarkText'].includes(field) ? $(field).value : Number($(field).value);
     }
     doc.styleProfiles[doc.style.aspectRatio] = { ...doc.style };
     try { checkDocumentSize(doc); }
@@ -281,9 +300,9 @@ for (const field of styleFields) {
 }
 // Unique titles keep their settings when body text changes or pages move.
 // For repeated titles, use a content digest so rearranging them cannot swap settings.
-function sourcePageKey(index) {
-  const page = sourcePages[index];
-  const matching = sourcePages.filter(item => item.type === page.type && item.title === page.title);
+function sourcePageKey(index, pages = sourcePages) {
+  const page = pages[index];
+  const matching = pages.filter(item => item.type === page.type && item.title === page.title);
   if (matching.length === 1) return JSON.stringify([page.type, page.title, 0]);
   const content = JSON.stringify([page.body, page.subtitle, page.note]);
   let first = 2166136261, second = 2246822507;
@@ -293,6 +312,41 @@ function sourcePageKey(index) {
   }
   const digest = (first >>> 0).toString(16).padStart(8, '0') + (second >>> 0).toString(16).padStart(8, '0');
   return JSON.stringify([page.type, page.title, digest]);
+}
+// Match unchanged pages first, then renamed or edited pages. Only use position
+// inside an unchanged page count, after pages with stronger matches are reserved.
+function migrateSourceHighlights(previous, next, highlights) {
+  const remainingOld = new Set(previous.map((_, index) => index));
+  const remainingNew = new Set(next.map((_, index) => index));
+  const matches = [];
+  function matchUnique(identity) {
+    for (const oldIndex of [...remainingOld]) {
+      const oldPage = previous[oldIndex], value = identity(oldPage);
+      const oldCandidates = [...remainingOld].filter(index => identity(previous[index]) === value);
+      const newCandidates = [...remainingNew].filter(index => identity(next[index]) === value);
+      if (oldCandidates.length !== 1 || newCandidates.length !== 1) continue;
+      const newIndex = newCandidates[0];
+      matches.push([oldIndex, newIndex]);
+      remainingOld.delete(oldIndex); remainingNew.delete(newIndex);
+    }
+  }
+  matchUnique(page => JSON.stringify([page.type, page.title, page.body, page.subtitle, page.note]));
+  matchUnique(page => JSON.stringify([page.type, page.title]));
+  matchUnique(page => JSON.stringify([page.type, page.body, page.subtitle, page.note]));
+  if (previous.length === next.length) {
+    for (const oldIndex of remainingOld) {
+      if (remainingNew.has(oldIndex) && previous[oldIndex].type === next[oldIndex].type) {
+        matches.push([oldIndex, oldIndex]);
+      }
+    }
+  }
+  const migrated = Object.assign(Object.create(null), highlights);
+  for (const [oldIndex] of matches) delete migrated[sourcePageKey(oldIndex, previous)];
+  for (const [oldIndex, newIndex] of matches) {
+    const key = sourcePageKey(oldIndex, previous);
+    if (Object.hasOwn(highlights, key)) migrated[sourcePageKey(newIndex, next)] = highlights[key];
+  }
+  return migrated;
 }
 $('source-highlight').oninput = () => {
   if (!sourceMode || !sourcePages[current]) return;
@@ -503,11 +557,13 @@ function applyMarkdown(payload) {
   if (payload.error) throw new Error(payload.error);
   if (payload.revision !== sourceRevision) {
     const next = validateDocument({ ...doc, pages: payload.pages });
+    sourceHighlights = migrateSourceHighlights(sourcePages, next.pages, sourceHighlights);
     sourcePages = structuredClone(next.pages);
     applySourceOverrides(next.pages);
     doc = next;
     current = Math.min(current, doc.pages.length - 1);
     sourceRevision = payload.revision;
+    persist();
     syncEditor();
     $('source-status').textContent = '已同步 · ' + new Date().toLocaleTimeString('zh-CN');
   }
@@ -583,12 +639,12 @@ async function initializeWeb() {
       // Preserve existing draft keys for seed files created before optional style controls.
       const fingerprint = structuredClone(seed);
       if (rawSeed.styleProfiles === undefined) delete fingerprint.styleProfiles;
-      for (const field of ['lineHeight', 'marginX', 'marginY', 'letterSpacing', 'aspectRatio', 'coverTitleSize', 'coverSubtitleSize', 'pageTitleSize']) {
+      for (const field of ['lineHeight', 'marginX', 'marginY', 'letterSpacing', 'aspectRatio', 'coverTitleSize', 'coverSubtitleSize', 'pageTitleSize', 'coverHighlightWidth', 'watermarkText', 'watermarkOpacity', 'watermarkSize']) {
         if (rawSeed.style[field] === undefined) delete fingerprint.style[field];
       }
       if (rawSeed.styleProfiles) {
         for (const ratio of ['3:4', '9:16']) {
-          for (const field of ['coverTitleSize', 'coverSubtitleSize', 'pageTitleSize']) {
+          for (const field of ['coverTitleSize', 'coverSubtitleSize', 'pageTitleSize', 'coverHighlightWidth', 'watermarkText', 'watermarkOpacity', 'watermarkSize']) {
             if (rawSeed.styleProfiles[ratio]?.[field] === undefined) delete fingerprint.styleProfiles[ratio][field];
           }
         }
@@ -622,6 +678,39 @@ function positionSourceMenu() {
   menu.style.left = Math.max(16, Math.min(anchor.left, window.innerWidth - menu.offsetWidth - 16)) + 'px';
   menu.style.top = anchor.bottom + 10 + 'px';
 }
+function showSelectedSource() {
+  const path = $('source-path').value;
+  $('selected-source-name').textContent = path ? path.split('/').pop() : '尚未选择文件';
+  $('selected-source-name').title = path;
+}
+$('choose-source-file').onclick = async () => {
+  if (switchingSource || choosingSource) return;
+  choosingSource = true;
+  $('choose-source-file').disabled = true;
+  $('apply-source').disabled = true;
+  $('source-choice').disabled = true;
+  $('source-choice-error').textContent = '';
+  $('choose-source-file').textContent = '请在系统窗口中选择…';
+  try {
+    const response = await fetch('choose-markdown', {
+      method: 'POST', headers: { 'X-Studio-Request': 'file-picker' },
+      signal: AbortSignal.timeout(190000)
+    });
+    if (response.status === 204) return;
+    const payload = await response.json();
+    if (!response.ok || typeof payload.path !== 'string' || !payload.path) throw new Error(payload.error || '未能选择文件，请重试。');
+    $('source-path').value = payload.path;
+    showSelectedSource();
+  } catch (error) {
+    $('source-choice-error').textContent = error.name === 'TimeoutError' ? '选择文件超时，请重新选择。' : error.message;
+  } finally {
+    choosingSource = false;
+    $('choose-source-file').disabled = false;
+    $('apply-source').disabled = false;
+    $('source-choice').disabled = false;
+    $('choose-source-file').textContent = '选择 Markdown 文件…';
+  }
+};
 function updateSourceChoice() {
   const markdown = $('source-choice').value === 'markdown';
   $('source-path-label').hidden = !markdown;
@@ -631,6 +720,7 @@ $('open-source').addEventListener('click', () => {
   if ($('source-menu').matches(':popover-open')) return;
   $('source-choice').value = sourceMode ? 'markdown' : 'web';
   $('source-path').value = sourcePath;
+  showSelectedSource();
   $('source-choice-error').textContent = '';
   updateSourceChoice();
 });
@@ -639,15 +729,16 @@ $('source-choice').onchange = updateSourceChoice;
 window.addEventListener('resize', positionSourceMenu);
 window.addEventListener('scroll', positionSourceMenu, true);
 $('apply-source').onclick = async () => {
-  if (switchingSource || exporting) return;
+  if (switchingSource || choosingSource || exporting) return;
   switchingSource = true; $('apply-source').disabled = true;
+  $('choose-source-file').disabled = true; $('source-choice').disabled = true;
   $('source-choice-error').textContent = '';
   try {
     const mode = $('source-choice').value;
     const path = $('source-path').value.trim();
     let payload;
     if (mode === 'markdown') {
-      if (!path) throw new Error('请填写 Markdown 文件的完整路径。');
+      if (!path) throw new Error('请先选择一个 Markdown 文件。');
       const response = await fetch('source.json?' + new URLSearchParams({ path }), { cache: 'no-store', signal: AbortSignal.timeout(5000) });
       payload = await response.json();
       if (response.status !== 200 || payload.error) throw new Error(payload.error || '无法读取这个文件。');
@@ -677,7 +768,10 @@ $('apply-source').onclick = async () => {
     }
     showPages(); $('source-menu').hidePopover();
   } catch (error) { $('source-choice-error').textContent = error.message; }
-  finally { switchingSource = false; $('apply-source').disabled = false; }
+  finally {
+    switchingSource = false; $('apply-source').disabled = false;
+    $('choose-source-file').disabled = false; $('source-choice').disabled = false;
+  }
 };
 async function initialize() {
   if (sourceChoice?.mode !== 'web' && await initializeMarkdown()) return;

@@ -69,3 +69,7 @@ canvas { display: block; width: 100%; height: auto; }
 #source-error:not(:empty) { color: #b45309; background: #fff7ed; padding: 12px; border-radius: 7px; line-height: 1.7; }
 #source-menu h2 { margin-bottom: 12px; }
 #source-choice-error:not(:empty) { color: #b45309; line-height: 1.7; }
+
+#source-path-label { margin-bottom: 20px; }
+#source-path-label label { margin-bottom: 10px; }
+#selected-source-name { color: #373f4d; }

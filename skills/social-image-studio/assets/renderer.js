@@ -38,8 +38,8 @@ window.StudioRenderer = (() => {
     }
     return lines;
   }
-  function underline(ctx, x, y, width, color) {
-    ctx.strokeStyle = color; ctx.lineWidth = 19; ctx.lineCap = 'round';
+  function underline(ctx, x, y, width, color, thickness = 19) {
+    ctx.strokeStyle = color; ctx.lineWidth = thickness; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(x, y);
     ctx.bezierCurveTo(x + width * .3, y - 14, x + width * .85, y - 28, x + width, y - 17);
     ctx.stroke();
@@ -59,10 +59,10 @@ window.StudioRenderer = (() => {
     }
     return null;
   }
-  function selectedUnderline(ctx, line, range, x, y, color) {
+  function selectedUnderline(ctx, line, range, x, y, color, thickness = 19) {
     const prefixWidth = ctx.measureText(line.slice(0, range.start)).width;
     const endWidth = ctx.measureText(line.slice(0, range.end)).width;
-    underline(ctx, x + prefixWidth, y, endWidth - prefixWidth, color);
+    underline(ctx, x + prefixWidth, y, endWidth - prefixWidth, color, thickness);
   }
   const imageCache = new Map();
   async function loadImages(page) {
@@ -138,10 +138,10 @@ window.StudioRenderer = (() => {
       lines.forEach((line, index) => {
         const lineWidth = ctx.measureText(line).width;
         if (highlight && index === highlight.index) {
-          selectedUnderline(ctx, line, highlight, blockX, y + underlineOffset, style.accent);
+          selectedUnderline(ctx, line, highlight, blockX, y + underlineOffset, style.accent, style.coverHighlightWidth ?? 30);
         } else if (!query && index === 0 && line.trim()) {
           const underlineWidth = Math.min(lineWidth, 360);
-          underline(ctx, blockX + 6, y + underlineOffset, underlineWidth, style.accent);
+          underline(ctx, blockX + 6, y + underlineOffset, underlineWidth, style.accent, style.coverHighlightWidth ?? 30);
         }
         ctx.fillText(line, blockX, y);
         y += titleStep;
@@ -213,6 +213,17 @@ window.StudioRenderer = (() => {
     if (noteLines.length) {
       ctx.fillStyle = '#777777'; ctx.font = `20px ${FONT}`;
       noteLines.forEach((line, index) => ctx.fillText(line, margin, noteTop + index * 40));
+    }
+    const watermark = (style.watermarkText ?? '').trim();
+    if (watermark) {
+      // Use the bottom margin, separate from the content and reference area.
+      ctx.save();
+      ctx.font = `${style.watermarkSize ?? 24}px ${BODY_FONT}`;
+      ctx.fillStyle = `rgba(0, 0, 0, ${(style.watermarkOpacity ?? 12) / 100})`;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+      const inset = style.marginX ?? 90;
+      ctx.fillText(watermark, WIDTH - inset, HEIGHT - 24, WIDTH - inset * 2);
+      ctx.restore();
     }
     return { overflow, highlightWarning, imageWarning };
   }

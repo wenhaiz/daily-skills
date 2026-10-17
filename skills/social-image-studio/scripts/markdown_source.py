@@ -8,6 +8,8 @@ from threading import Lock
 from urllib.parse import unquote, urlsplit
 
 
+# Include parser changes in revisions so open previews refresh after an update.
+PARSER_VERSION = b'markdown-pages-v2\0'
 MAX_SOURCE_BYTES = 5 * 1024 * 1024
 MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
 MAX_IMAGE_DATA_LENGTH = 1500000
@@ -112,7 +114,7 @@ class MarkdownSource:
             # A heading immediately after a separator belongs to that new page.
             sections, current_lines = [], []
             for line in markdown.splitlines():
-                separator = re.fullmatch(r'[ \t]*---[ \t]*', line)
+                separator = re.fullmatch(r'[ \t]*-(?:[ \t]*-){2,}[ \t]*', line)
                 heading = re.match(r'^##[ \t]+', line)
                 if separator or heading:
                     if any(item.strip() for item in current_lines):
@@ -135,7 +137,7 @@ class MarkdownSource:
             result = {
                 'sourceId': self.source_id,
                 'filename': self.path.name,
-                'revision': hashlib.sha256(raw + ''.join(image_hashes).encode('ascii')).hexdigest(),
+                'revision': hashlib.sha256(PARSER_VERSION + raw + ''.join(image_hashes).encode('ascii')).hexdigest(),
                 'pages': pages,
             }
             if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_DOCUMENT_BYTES:
